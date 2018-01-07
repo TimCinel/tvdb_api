@@ -344,7 +344,7 @@ class Show(dict):
             )
         return ret
 
-    def search(self, term=None, key=None):
+    def search(self, term=None, key=None, name_filter=None):
         """
         Search all episodes in show. Can search all data, or a specific key
         (for example, episodename)
@@ -397,7 +397,7 @@ class Show(dict):
         """
         results = []
         for cur_season in self.values():
-            searchresult = cur_season.search(term=term, key=key)
+            searchresult = cur_season.search(term=term, key=key, name_filter=name_filter)
             if len(searchresult) != 0:
                 results.extend(searchresult)
 
@@ -421,7 +421,7 @@ class Season(dict):
         else:
             return dict.__getitem__(self, episode_number)
 
-    def search(self, term=None, key=None):
+    def search(self, term=None, key=None, name_filter=None):
         """Search all episodes in season, returns a list of matching Episode
         instances.
 
@@ -434,7 +434,7 @@ class Season(dict):
         """
         results = []
         for ep in self.values():
-            searchresult = ep.search(term=term, key=key)
+            searchresult = ep.search(term=term, key=key, name_filter=name_filter)
             if searchresult is not None:
                 results.append(
                     searchresult
@@ -484,7 +484,7 @@ class Episode(dict):
 
                     raise tvdb_attributenotfound("Cannot find attribute %s" % (repr(key)))
 
-    def search(self, term=None, key=None):
+    def search(self, term=None, key=None, name_filter=None):
         """Search episode data for term, if it matches, return the Episode (self).
         The key parameter can be used to limit the search to a specific element,
         for example, episodename.
@@ -509,10 +509,14 @@ class Episode(dict):
         if term is None:
             raise TypeError("must supply string to search for (contents)")
 
+        if not name_filter:
+            name_filter = lambda name: name.lower()
+
         term = text_type(term).lower()
         for cur_key, cur_value in self.items():
             cur_key = text_type(cur_key)
-            cur_value = text_type(cur_value).lower()
+
+            cur_value = name_filter(text_type(cur_value))
             if key is not None and cur_key != key:
                 # Do not search this key
                 continue
